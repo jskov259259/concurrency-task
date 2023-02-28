@@ -6,41 +6,45 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.IntStream;
 
 public class Client {
 
+    private int requestQuantity;
+
     private List<Entity> requestList = new ArrayList<>();
-
     private List<Integer> responseList = new ArrayList<>();
+    private Lock lock = new ReentrantLock();
 
-    public void addResponse(Integer response) {
-        responseList.add(response);
+    public Client() {
+        requestQuantity = 10;
+        initializeRequestList();
     }
 
-    public static void main(String[] args) {
+    public Client(int requestQuantity) {
+        this.requestQuantity = requestQuantity;
+        initializeRequestList();
+    }
 
-        Client client = new Client();
-        client.initializeRequestList();
-        ExecutorService executorService = Executors.newFixedThreadPool(100);
-        List<Entity> requestList = client.getRequestList();
-        requestList.stream().forEach(entity -> {
-            Future<Integer> future = executorService.submit(new Request(entity));
-            try {
-                client.addResponse(future.get());
-            } catch (InterruptedException | ExecutionException e) {
-                e.printStackTrace();
-            }
-        });
-        client.responseList.stream().forEach(System.out::println);
-        System.out.println(client.responseList.size());
+    public void addResponse(Integer response) {
+        lock.lock();
+        responseList.add(response);
+        lock.unlock();
     }
 
     private void initializeRequestList() {
-        for (int i=0; i< 100; i++) requestList.add(new Entity());
+
+        IntStream.rangeClosed(1, requestQuantity).mapToObj(i -> new Entity())
+                            .forEach(entity -> requestList.add(entity));
     }
 
     public List<Entity> getRequestList() {
         return requestList;
     }
 
+    public List<Integer> getResponseList() {
+        return responseList;
+    }
 }

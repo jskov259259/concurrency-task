@@ -5,6 +5,7 @@ import java.util.Random;
 public class Server {
 
     public static Integer function(Integer request) {
+
         int delay = getRandomNumber(0, 2000);
         try {
             Thread.sleep(delay);
